@@ -1,0 +1,84 @@
+{
+  "title": "Онтология наблюдений",
+  "path": "student@example.ru/Мой Фонд/Учебные/Онтология наблюдений$;",
+  "date": "01.10.2026-09:00:00.000",
+  "json_type": "universal",
+  "ontology": "Платформа IACPaaS/Ядро платформы/Язык ИРУО$;",
+  "context": [],
+  "id": 100,
+  "name": "Онтология наблюдений",
+  "type": "КОРЕНЬ",
+  "meta": "Язык ИРУО",
+  "comment": "",
+  "successors": [
+    {
+      "id": 101,
+      "specifier": "list",
+      "restrictor": "new",
+      "name": "Группа",
+      "type": "НЕТЕРМИНАЛ",
+      "meta": "описать элемент списка",
+      "comment": "группа наблюдений",
+      "rcomment": "",
+      "successors": [
+        {
+          "id": 102,
+          "specifier": "listmm",
+          "restrictor": "ref-new",
+          "name": "Наблюдение",
+          "type": "НЕТЕРМИНАЛ",
+          "meta": "описать элемент списка",
+          "comment": "",
+          "rcomment": "",
+          "successors": [
+            {
+              "id": 103,
+              "specifier": "onemm",
+              "restrictor": "new",
+              "name": "Тип значений",
+              "type": "НЕТЕРМИНАЛ",
+              "meta": "описать элемент списка",
+              "comment": "",
+              "rcomment": "",
+              "successors": [
+                {
+                  "id": 104,
+                  "specifier": "one",
+                  "restrictor": "new",
+                  "name": "нижняя граница",
+                  "type": "ТЕРМИНАЛ-СОРТ",
+                  "valtype": "REAL",
+                  "meta": "описать элемент списка",
+                  "comment": "",
+                  "rcomment": ""
+                },
+                {
+                  "id": 105,
+                  "specifier": "one",
+                  "restrictor": "new",
+                  "name": "верхняя граница",
+                  "type": "ТЕРМИНАЛ-СОРТ",
+                  "valtype": "REAL",
+                  "meta": "описать элемент списка",
+                  "comment": "",
+                  "rcomment": ""
+                },
+                {
+                  "id": 106,
+                  "specifier": "onemm",
+                  "restrictor": "new",
+                  "name": "единица измерения",
+                  "type": "ТЕРМИНАЛ-СОРТ",
+                  "valtype": "STRING",
+                  "meta": "описать элемент списка",
+                  "comment": "",
+                  "rcomment": ""
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

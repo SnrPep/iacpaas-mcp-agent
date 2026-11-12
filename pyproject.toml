@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "iacpaas-mcp-agent"
+version = "1.0.0"
+description = "MCP-сервер-адаптер к платформе IACPaaS и ИИ-агент (VS Code, Claude Code, CLI, веб-чат)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp[cli]>=2.3,<3",
+    "httpx>=0.27",
+    "pydantic>=2.7",
+]
+
+[project.optional-dependencies]
+agent = [
+    "langchain[mcp]>=1.4.3,<2",
+    "langgraph>=1.2,<1.3",
+    "langgraph-checkpoint-sqlite>=3.1",
+    "aiosqlite>=0.20",
+    "starlette>=0.40",
+    "uvicorn>=0.30",
+]
+models = [
+    "langchain-ollama>=1.1",
+    "langchain-openai>=1.6",
+    "langchain-gigachat>=0.5",
+    "langchain-deepseek>=1.1",
+    "langchain-openrouter>=0.2",
+    "langchain-anthropic>=1.7",
+]
+dev = ["pytest>=8", "anyio>=4"]
+
+[project.scripts]
+iacpaas-mcp = "iacpaas_mcp.__main__:main"
+iacpaas-agent = "iacpaas_agent.cli:main"
+iacpaas-web = "iacpaas_agent.web.app:main"
+iacpaas-keys = "iacpaas_agent.keys:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+iacpaas_agent = ["web/static/*", "web/static/katex/*", "web/static/katex/fonts/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning", "ignore:.*beta.*"]

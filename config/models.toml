@@ -1,0 +1,155 @@
+# Профили моделей агента. Выбор: --model <имя> (CLI), список в веб-чате или AGENT_MODEL в .env.
+# Секреты сюда НЕ пишем: только ${ПЕРЕМЕННАЯ}, значения лежат в .env.
+# Обязательное требование к модели: поддержка tool calling (вызова инструментов).
+# Новая модель = новая секция. Любой OpenAI-совместимый сервис: provider = "openai" + base_url.
+# context_tokens – сколько токенов прошлого диалога модель видит на каждом шаге (без инструкции и схем инструментов,
+# ~7 тыс.). Что не влезло – выжимкой кодом: вопросы, числа и газы из ответов, пути. Не задано – 16000.
+# window_tokens – окно модели целиком (инструкция + инструменты + история + текущий вопрос), для шапки веб-чата
+# «контекст N % · X из Y»; у Ollama – num_ctx; не задано – доля не показывается. chars_per_token – символов на токен,
+# пока модель в чате не отвечала (дальше код меряет сам по её ответам); по трассе GigaChat: инструкция и схемы ~42 тыс.
+# символов = 10,4 тыс. токенов. Не задано – число «примерное» (~).
+
+# Порядок для AGENT_MODEL=auto: берётся первый профиль, для которого заданы все переменные
+# (а для Ollama — запущен сервер на localhost:11434 и модель скачана).
+auto = ["gigachat", "yandex", "deepseek", "openrouter", "openai", "claude", "ollama-small", "ollama-qwen"]
+
+# --- Локально и бесплатно: данные не покидают компьютер ------------------------
+[ollama-qwen]
+provider = "ollama"
+parallel = 1                        # процессор: два запроса сразу только замедлят оба
+model = "qwen3:8b"
+base_url = "http://localhost:11434"
+temperature = 0
+reasoning = false                   # без режима «размышления»: быстрее, ответ без <think>
+num_ctx = 16384                     # окно контекста: инструкция + инструменты ≈ 6 тыс. токенов, остальное — диалог
+context_tokens = 4000               # прошлый диалог: окно 16 тыс., ~7 тыс. – инструкция и инструменты, остальное – текущий вопрос
+keep_alive = "15m"                  # держать модель в памяти 15 мин после ответа (загрузка с диска ~20 с)
+num_gpu = 0                         # только процессор: на RTX 2060 этого ноутбука длинные запросы роняют драйвер (docs/dev-log.md, этап 6)
+note = "ollama pull qwen3:8b — ~5 ГБ; только процессор: первый вопрос ~8 мин, далее ~1–2 мин на шаг"
+
+[ollama-small]
+provider = "ollama"
+parallel = 1                        # процессор: два запроса сразу только замедлят оба
+model = "qwen3:4b-instruct-2507-q4_K_M"   # Instruct — без «размышлений»; тег qwen3:4b = Thinking (рассуждает вслух, медленно)
+base_url = "http://localhost:11434"
+temperature = 0
+num_ctx = 16384
+context_tokens = 3000               # слабое железо: длинный запрос на процессоре – минуты
+keep_alive = "2h"                   # держать в памяти: на процессоре первое чтение инструкции — минуты
+num_gpu = 0                         # только процессор: RTX 2060 этого ноутбука сбоит под нагрузкой (dev-log, этап 6)
+note = "ollama pull qwen3:4b-instruct-2507-q4_K_M — 2,5 ГБ; только процессор"
+
+# --- Российские провайдеры ---------------------------------------------------
+# GigaChat: три модели одного ключа. group — заголовок в выборе модели; parallel_group — общая очередь:
+# Freemium принимает один запрос за раз на весь ключ (второй — 429), какой бы моделью он ни был.
+[gigachat]
+provider = "gigachat"
+model = "GigaChat-2-Max"
+window_tokens = 128000
+chars_per_token = 4
+label = "GigaChat-2 Max"
+group = "GigaChat"
+credentials = "${GIGACHAT_CREDENTIALS}"
+scope = "GIGACHAT_API_PERS"
+timeout = 60
+parallel = 1
+parallel_group = "gigachat"
+context_tokens = 24000              # окно модели большое (до 128 тыс.); больше – дороже каждый шаг
+note = "самая точная; Freemium для физлиц, сертификат Минцифры — GIGACHAT_CA_BUNDLE_FILE в .env"
+
+[gigachat-pro]
+provider = "gigachat"
+model = "GigaChat-2-Pro"
+window_tokens = 128000
+chars_per_token = 4
+label = "GigaChat-2 Pro"
+group = "GigaChat"
+credentials = "${GIGACHAT_CREDENTIALS}"
+scope = "GIGACHAT_API_PERS"
+timeout = 60
+parallel = 1
+parallel_group = "gigachat"
+context_tokens = 16000
+note = "средняя: быстрее и дешевле Max"
+
+[gigachat-lite]
+provider = "gigachat"
+model = "GigaChat-2"
+window_tokens = 128000
+chars_per_token = 4
+label = "GigaChat-2 Lite"
+group = "GigaChat"
+credentials = "${GIGACHAT_CREDENTIALS}"
+scope = "GIGACHAT_API_PERS"
+timeout = 60
+parallel = 1
+parallel_group = "gigachat"
+context_tokens = 12000              # слабее модель – короче история: меньше путается
+note = "самая быстрая и дешёвая, чаще ошибается в многошаговых вопросах"
+
+[yandex]
+provider = "openai"                 # OpenAI-совместимый API Yandex AI Studio
+model = "gpt://${YANDEX_FOLDER_ID}/yandexgpt-5.1"
+window_tokens = 32000
+base_url = "https://ai.api.cloud.yandex.net/v1"
+api_key = "${YANDEX_API_KEY}"
+default_headers = { "OpenAI-Project" = "${YANDEX_FOLDER_ID}" }
+temperature = 0
+note = "API-ключ сервисного аккаунта + ID каталога"
+
+[deepseek]
+provider = "deepseek"
+model = "deepseek-flash"
+window_tokens = 128000
+api_key = "${DEEPSEEK_API_KEY}"
+extra_body = { thinking = { type = "disabled" } }   # с инструментами thinking даёт ошибку 400
+note = "платно; thinking выключен"
+
+[openrouter]
+provider = "openrouter"
+model = "openai/gpt-oss-20b:free"
+window_tokens = 128000
+api_key = "${OPENROUTER_API_KEY}"
+note = ":free — бесплатные модели с лимитами (50 запросов/день)"
+
+# --- Зарубежные (только там, где сервис официально доступен) ------------------
+[openai]
+provider = "openai"
+model = "gpt-5.5"
+window_tokens = 128000
+api_key = "${OPENAI_API_KEY}"
+
+[claude]
+provider = "anthropic"
+model = "claude-sonnet-5-5"
+window_tokens = 200000
+api_key = "${ANTHROPIC_API_KEY}"
+
+# --- Любой OpenAI-совместимый сервер (LM Studio, vLLM, корпоративный шлюз…) ---
+[custom]
+provider = "openai"
+model = "${LLM_MODEL}"
+base_url = "${LLM_BASE_URL}"
+api_key = "${LLM_API_KEY}"
+
+# --- Демо без модели и сети: сценарий «найти ИР -> посчитать» ----------------
+[demo]
+provider = "fake"
+model = "scripted"
+cycle = true                        # сценарий повторяется на каждый вопрос
+script = [
+  { tool = "list_inforesources", args = { filter = "наблюд" } },
+  { tool = "count_graph", args = { path = "Учебные/База наблюдений" } },
+  { say = "Демо-сценарий: в ИР «Учебные/База наблюдений» 11 вершин и 11 дуг (подробности — в трассе вызовов). Это заглушка без LLM: подключите модель в config/models.toml." },
+]
+
+# --- Демо без модели на реальной платформе (IACPAAS_BACKEND=http) ------------------
+[demo-platform]
+provider = "fake"
+model = "scripted"
+cycle = true
+script = [
+  { tool = "list_inforesources", args = { filter = "газ" } },
+  { tool = "count_graph", args = { path = "Загрузки/База технологических газов", root = "Моногазы" } },
+  { say = "Демо-сценарий на платформе: найден ИР «Загрузки/База технологических газов», подсчитан подграф «Моногазы» (числа — в трассе вызовов). Это заглушка без LLM: подключите модель в config/models.toml." },
+]
