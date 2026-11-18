@@ -32,6 +32,30 @@ python -m venv .venv
 ```
 Нужен Python 3.11+. Для MCP Inspector — Node.js 22.19+. Linux/macOS: `.venv/bin/python`.
 
+## Настройка у себя: что указать в `.env`
+`setup_clients.py` создаёт `.env` из `.env.example`. Нужно решить три вещи.
+
+**1. Откуда данные**
+
+| Вариант | Что указать | Что будет |
+|---|---|---|
+| Реальная платформа | `IACPAAS_BACKEND=http`; логин и пароль – `.venv\Scripts\iacpaas-keys set iacpaas` | ИР ищутся в «Мой Фонд/Загрузки» **вашего** аккаунта – там должны быть 9 ИР из `config/inforesources.json`. ИР попадает в «Загрузки» после просмотра в Фонде: «Фонд» → раздел → правая кнопка по ИР → «просмотр» |
+| Без платформы | `IACPAAS_BACKEND=mock` (так в `.env.example`) | песочница `fixtures/` – урезанная копия базы: 27 газов и 986 вершин (на платформе 48 газов и 1478 вершин), числа будут отличаться от отчёта |
+
+Проверка без модели: `.venv\Scripts\iacpaas-mcp --check` – режим, вход, запись.
+
+**2. Модель** (`AGENT_MODEL` в `.env`)
+- Локальная Qwen через Ollama: `ollama pull qwen3:8b` и `AGENT_MODEL=ollama-qwen`; лёгкий вариант –
+  `ollama pull qwen3:4b-instruct-2507-q4_K_M` и `AGENT_MODEL=ollama-small`.
+- **Видеокарта:** в `config/models.toml` у профилей `ollama-qwen` и `ollama-small` стоит `num_gpu = 0` – видеокарта
+  отключена (на ноутбуке разработчиков RTX 2060 сбоила под нагрузкой). С исправной видеокартой удалите эту строку,
+  иначе модель работает только на процессоре: первый вопрос ~8 мин, дальше 1–2 мин на шаг.
+- GigaChat: `.venv\Scripts\iacpaas-keys set gigachat` и `AGENT_MODEL=gigachat`.
+- Стенд из 124 вопросов прогонялся на GigaChat-2-Max; на других моделях точность не измерялась.
+- Другие модели – `docs/models.md`.
+
+**3. Порт веб-чата** – по умолчанию **8770** (`WEB_PORT` в `.env`).
+
 ## Запуск
 
 ### 1. Claude Code (VS Code или терминал)
@@ -57,7 +81,7 @@ Show Output. Изменяющие инструменты — с предпрос
 
 ### 4. Веб-чат
 ```powershell
-.venv\Scripts\iacpaas-web                           # http://127.0.0.1:8773 (WEB_PORT в .env)
+.venv\Scripts\iacpaas-web                           # http://127.0.0.1:8770 (WEB_PORT в .env)
 ```
 
 ### 5. Сервер отдельно (HTTP) — для нескольких клиентов
